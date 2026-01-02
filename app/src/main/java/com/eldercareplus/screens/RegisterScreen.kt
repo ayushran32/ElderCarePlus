@@ -1,0 +1,87 @@
+package com.eldercareplus.screens
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.eldercareplus.auth.AuthState
+import com.eldercareplus.auth.AuthViewModel
+import com.eldercareplus.navigation.Screen
+
+@Composable
+fun RegisterScreen(navController: NavController) {
+    val vm: AuthViewModel = viewModel()
+    val state by vm.authState.collectAsState()
+
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
+    LaunchedEffect(state) {
+        if (state is AuthState.Success) {
+            vm.reset()
+            // Go to Profile Setup instead of Role directly
+            navController.navigate(Screen.ProfileSetup.route) {
+                popUpTo(Screen.Register.route) { inclusive = true }
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Register", style = MaterialTheme.typography.headlineSmall)
+
+        Spacer(Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            singleLine = true
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation()
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        Button(onClick = { vm.register(email, password) }) {
+            Text("Create Account")
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        TextButton(onClick = { navController.popBackStack() }) {
+            Text("Back to Login")
+        }
+
+        when (state) {
+            is AuthState.Loading -> {
+                Spacer(Modifier.height(12.dp))
+                CircularProgressIndicator()
+            }
+            is AuthState.Error -> {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    (state as AuthState.Error).message,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+            else -> {}
+        }
+    }
+}
